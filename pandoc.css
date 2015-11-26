@@ -1,0 +1,51 @@
+<style type="text/css">
+body {
+    margin: auto;
+    padding-right: 1em;
+    padding-left: 1em;
+    max-width: 100em;
+    border-left: 1px solid black;
+    border-right: 1px solid black;
+    color: black;
+    font-family: Microsoft Yahei, Consolas, monaco, monospace, sans-serif;
+    font-size: 100%;
+    line-height: 140%;
+    color: #333; 
+}
+table, th, td {
+    border: 1px solid blue;
+}
+blockquote {
+    padding: 2px;
+    background-color: #BBBBBB;
+    border-top: 1px solid #222222;  
+    border-bottom: 1px solid #222222;  
+    border-left: 1px solid #222222;  
+    border-right: 1px solid #222222;  
+    margin: 2px;  
+    background-position: top left;  
+    background-repeat: no-repeat;  
+    text-indent: 10px;
+}
+p {
+    line-height: 150%;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+h1 {
+    margin-top: 50px;
+    margin-bottom: 50px;
+}
+h2 {
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+}
+h4 {
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+</style>
