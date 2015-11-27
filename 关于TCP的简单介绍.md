@@ -73,20 +73,23 @@ Peer两端先发出了FIN包的一方, 被认为是TCP主动关闭连接的一�
 
 > * tcp_timestamps
 > * tcp_tw_recycle
+>   Enable fast recycling TIME-WAIT sockets.
 > * tcp_tw_reuse
+>   Allow to reuse TIME-WAIT sockets for new connections when it is safe from protocol viewpoint.
 
-Linux下快速回收的时间为3.5 * RTO(Retransmission Timeout), 而一个RTO时间为200ms至120s, 为避免产生异常, 当同时满足以下3点时, 新连接会被拒绝:
-> * 来自同一个对端peer的TCP包携带了时间戳
-> * 之前同一台peer机器(仅仅识别IP地址，因为连接被快速释放了，没了端口信息)的某个TCP数据在MSL秒之内到过本Server
-> * Peer机器新连接的时间戳小于peer机器上次TCP到来时的时间戳，且差值大于重放窗口戳(TCP_PAWS_WINDOW)
+理论上, 同时打开timestamps和recycle选项就可以实现Linux下TIME_WAIT的快速回收, 然而, 因为Linux下快速回收的时间为3.5 * RTO(Retransmission Timeout), 一个RTO时间为200ms至120s, 开启快速回收可能带来上述"如果没有TIME_WAIT"的风险. 为避免快速回收产生异常, 快速回收被设计出了一个机制 -- 当满足以下3点时, 新连接会被拒绝:
 
-这个做法本来是没有问题的, 然而在NAT下, 所有后端机器都被当成同一台, 而这些后端peer的时间戳很可能不完全一致, 当时间戳快的Client建立的连接被Server关闭, 并进入了快速回收, 时间戳慢的Client发起了连接, 就会导致这个连接被Server拒绝.
+> * 来自同一个对端peer的TCP包携带了时间戳;
+> * 之前同一台peer机器(仅仅识别IP地址，因为连接被快速释放了，没了端口信息)的某个TCP数据在MSL秒之内到过本Server;
+> * peer机器新连接的时间戳小于peer机器上次TCP到来时的时间戳，且差值大于重放窗口戳(TCP_PAWS_WINDOW).
 
-因此, 在NAT后, 要谨慎使用recycle, 改为使用reuse:
+这样就回避掉了快速回收中主动关闭方突然收到莫名其妙的FIN而回复RST的问题. 这个做法本来是可行的, 然而在NAT下, 所有后端机器都被当成同一台, 而这些后端peer的时间戳很可能不完全一致, 当时间戳快的Client建立的连接被Server关闭, 并进入了快速回收, 时间戳慢的Client发起了连接, 就会导致这个连接被Server拒绝.
 
-> * 新连接SYN告知的初始序列号比TIME_WAIT老连接的末序列号大;
-> * 如果开启了tcp_timestamps，并且新到来的连接的时间戳比老连接的时间戳大.
->   (要同时开启tcp_tw_reuse选项和tcp_timestamps 选项才可以开启TIME_WAIT重用)
+因此, 在NAT后, 要谨慎使用recycle, 改为使用reuse, 其机制是, 下面两个条件任意满足一点, 即可使得TIME_WAIT的socket能被新到来的SYN连接复用:
+
+> * 新连接SYN告知的初始序列号比TIME_WAIT老连接的末序列号大(确保序列号比之前的要新);
+> * 如果开启了tcp_timestamps，并且新到来的连接的时间戳比老连接的时间戳大(确保时间比之前的要新).
+>   (要同时开启tcp_tw_reuse选项和tcp_timestamps选项才可以开启TIME_WAIT重用)
 
 tcp_tw_reuse对Server端来说并没解决大量TIME_WAIT造成的资源消耗的问题, 因为不管TIME_WAIT连接是否被重用，它依旧占用着系统资源. 但它可以使得Server不会被一直拒绝接入.
 
