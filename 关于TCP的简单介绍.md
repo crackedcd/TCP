@@ -282,7 +282,10 @@ Reno算法和拥塞控制的基础是假设3个冗余的ACK只代表丢失1个�
 Linux的协议栈维护的两个TCP连接队列:
 
 > * SYN半连接队列: Server端收到Client的SYN包并回复SYN+ACK包后, 该连接的信息就会被移到一个队列, 这个队列就是SYN半连接队列(此时TCP连接处于非同步状态);
+> * -- An incomplete connection queue, which contains an entry for each SYN that has arrived from a client for which the server is awaiting completion of the TCP three-way handshake. These sockets are in the SYN_RCVD state.
 > * accept连接队列: Server端收到SYN+ACK包的ACK包后, 就会将连接信息从SYN半连接队列移到另外一个队列, 这个队列就是accept连接队列(这个时候TCP连接已经建立, 三次握手完成了)
+> * -- A completed connection queue, which contains an entry for each client with whom the TCP three-way handshake has completed. These sockets are in the ESTABLISHED state.
+> * When an application puts a socket into LISTEN state using the listen syscall, it needs to specify a backlog for that socket. 
 
 在Linux kernel 2.2之前, backlog指的是上述两个队列之和, 在Linux kernel 2.2之后, backlog指accept连接队列的大小.
 
